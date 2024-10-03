@@ -1,7 +1,34 @@
 import { Container } from "@/components/Container";
-// import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export const Page = () => {
+  const [question, setQuestion] = useState("");
+  const [response, setResponse] = useState("");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      const res = await fetch("http://localhost:3000/api/chat", { // Assurez-vous que l'URL correspond à votre backend
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: question }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Erreur lors de la requête au serveur");
+      }
+
+      const data = await res.json();
+      setResponse(data.choices[0].message.content); // Supposons que Mistral renvoie une réponse structurée de cette manière
+    } catch (error) {
+      console.error(error);
+      setResponse("Une erreur est survenue lors de la récupération de la réponse.");
+    }
+  };
+
   return (
     <>
       <Container className="flex flex-wrap ">
@@ -17,7 +44,8 @@ export const Page = () => {
             </p>
             <div className="mt-4 flex flex-col items-start space-y-3 sm:space-x-4 sm:space-y-0 sm:items-center sm:flex-row">
               <button
-                className="mt-4 w-72 bg-green-500 text-white text-lg py-2 px-4 rounded-xl shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150">
+                className="mt-4 w-72 bg-green-500 text-white text-lg py-2 px-4 rounded-xl shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150"
+              >
                 Effectue une recherche
               </button>
             </div>
@@ -36,7 +64,7 @@ export const Page = () => {
           </div>
 
           <div className="flex flex-wrap justify-center gap-5 mt-8 md:justify-around">
-          <div className="pt-4">
+            <div className="pt-4">
               <img
                 src="/img/brands/c4s-logo.png"
                 width={200}
@@ -53,7 +81,7 @@ export const Page = () => {
               />
             </div>
             <div className="pt-8">
-            <img
+              <img
                 src="/img/brands/onepoint-logo.png"
                 width={200}
                 height={50}
@@ -61,7 +89,7 @@ export const Page = () => {
               />
             </div>
             <div className="pt-6">
-            <img
+              <img
                 src="/img/brands/sfr-logo.png"
                 width={200}
                 height={50}
@@ -69,7 +97,7 @@ export const Page = () => {
               />
             </div>
             <div className="pt-8">
-            <img
+              <img
                 src="/img/brands/microsoft-logo.png"
                 width={200}
                 height={50}
@@ -89,12 +117,21 @@ export const Page = () => {
             rows={4}
             className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             placeholder="Posez votre questions ici..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)} // Mettez à jour l'état avec la question
           ></textarea>
           <button
             className="mt-4 w-full bg-green-500 text-white py-3 rounded-xl shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150"
+            onClick={handleSubmit} // Appel de la fonction d'envoi
           >
             Envoyer
           </button>
+          {response && ( // Afficher la réponse si elle est présente
+            <div className="mt-4 p-4 border rounded-lg bg-gray-100">
+              <h2 className="font-bold">Réponse:</h2>
+              <p>{response}</p>
+            </div>
+          )}
         </div>
       </Container>
     </>
