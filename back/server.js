@@ -1,7 +1,7 @@
 // Importer les modules avec require
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch'); // Assurez-vous que node-fetch est à une version compatible
+const fetch = require('node-fetch'); 
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -30,7 +30,7 @@ app.post('/api/chat', async (req, res) => {
                 messages: [
                     { role: "user", content: req.body.message }
                 ],
-                max_tokens: 100
+                max_tokens: 800
             })
         });
 

@@ -1,6 +1,79 @@
 import { Container } from "@/components/Container";
 import { useState } from "react";
 
+// Données des stations avec les polluants et leurs valeurs
+const stations = [
+  {
+    nom_station: "Marseille Place Verneuil",
+    adresse: "Place Henri Verneuil",
+    polluants: {
+      SO2: 25, 
+      NO: 50,
+      NO2: 60,
+      NOx: 70,
+      PM10: 40,
+      PM2_5: 30
+    }
+  },
+  {
+    nom_station: "Marseille Nord",
+    adresse: "Septèmes-les-Vallons",
+    polluants: {
+      SO2: 10, 
+      NO: 40,
+      NO2: 35,
+      NOx: 50,
+      PM10: 25,
+      PM2_5: 15
+    }
+  },
+  {
+    nom_station: "Martigues Caravelle",
+    adresse: "Martigues",
+    polluants: {
+      NO: 55,
+      NO2: 42,
+      NOx: 80,
+      PM10: 60,
+      PM2_5: 28
+    }
+  },
+];
+
+// Normes de l'OMS
+const omsLimits = {
+  SO2: 20, // µg/m³ sur 24 heures
+  NO2: 40, // µg/m³ annuel
+  PM10_24h: 50, // µg/m³ sur 24 heures
+  PM10_annual: 20, // µg/m³ annuel
+  PM2_5_24h: 25, // µg/m³ sur 24 heures
+  PM2_5_annual: 10, // µg/m³ annuel
+};
+
+// Fonction pour créer le prompt contextualisé
+const createPrompt = (question) => {
+  let prompt = `Tu es un expert de la qualité de l'air à Marseille. Voici les données de pollution de plusieurs stations, comparées aux normes de l'OMS. Réponds à la question posée de manière simple en te basant sur les données des stations (sans forcément les citer) et les normes OMS, où sont les zones plus polluées et quelles sont les moins polluées. Limite ta réponse à 500 tokens et fais des phrases complètes pour présenter les données\n\n`;
+
+  stations.forEach(station => {
+    prompt += `1. **${station.nom_station}** (${station.adresse})\n`;
+    prompt += `   - Polluants mesurés : `;
+    Object.entries(station.polluants).forEach(([pollutant, value]) => {
+      prompt += `${pollutant} : ${value} µg/m³, `;
+    });
+    prompt = prompt.slice(0, -2); 
+    prompt += `\n`;
+  });
+
+  prompt += `\nLes normes de l'OMS pour les principaux polluants sont :\n`;
+  prompt += `- SO2 : ${omsLimits.SO2} µg/m³ (moyenne sur 24 heures)\n`;
+  prompt += `- NO2 : ${omsLimits.NO2} µg/m³ (moyenne annuelle)\n`;
+  prompt += `- PM10 : ${omsLimits.PM10_24h} µg/m³ (moyenne sur 24 heures), ${omsLimits.PM10_annual} µg/m³ (moyenne annuelle)\n`;
+  prompt += `- PM2.5 : ${omsLimits.PM2_5_24h} µg/m³ (moyenne sur 24 heures), ${omsLimits.PM2_5_annual} µg/m³ (moyenne annuelle)\n\n`;
+
+  prompt += `Question : ${question}`;
+  return prompt;
+};
+
 export const Page = () => {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState("");
@@ -8,13 +81,15 @@ export const Page = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    const fullPrompt = createPrompt(question); // Crée le pré-prompt avec la question
+
     try {
-      const res = await fetch("http://localhost:3000/api/chat", { // Assurez-vous que l'URL correspond à votre backend
+      const res = await fetch("http://localhost:3000/api/chat", { 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: question }),
+        body: JSON.stringify({ message: fullPrompt }), // Envoye le pré-prompt
       });
 
       if (!res.ok) {
@@ -22,7 +97,7 @@ export const Page = () => {
       }
 
       const data = await res.json();
-      setResponse(data.choices[0].message.content); // Supposons que Mistral renvoie une réponse structurée de cette manière
+      setResponse(data.choices[0].message.content); 
     } catch (error) {
       console.error(error);
       setResponse("Une erreur est survenue lors de la récupération de la réponse.");
@@ -116,17 +191,17 @@ export const Page = () => {
             id="question"
             rows={4}
             className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            placeholder="Posez votre questions ici..."
+            placeholder="Posez votre question ici..."
             value={question}
-            onChange={(e) => setQuestion(e.target.value)} // Mettez à jour l'état avec la question
+            onChange={(e) => setQuestion(e.target.value)} // MAJ réponse
           ></textarea>
           <button
             className="mt-4 w-full bg-green-500 text-white py-3 rounded-xl shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150"
-            onClick={handleSubmit} // Appel de la fonction d'envoi
+            onClick={handleSubmit} 
           >
             Envoyer
           </button>
-          {response && ( // Afficher la réponse si elle est présente
+          {response && ( // Affiche la réponse si elle est présente
             <div className="mt-4 p-4 border rounded-lg bg-gray-100">
               <h2 className="font-bold">Réponse:</h2>
               <p>{response}</p>
